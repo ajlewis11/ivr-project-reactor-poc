@@ -6,7 +6,6 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
@@ -24,9 +23,8 @@ import java.util.Map;
 
 /**
  * todo javadoc.
- * I'm a loser
  */
-@Component
+//@Component todo disabled for now while I get the baseline working
 public class StringKafkaReceiver {
     private static final Logger log = LoggerFactory.getLogger(StringKafkaReceiver.class.getCanonicalName());
     private final WebReverseService webReverseService;
