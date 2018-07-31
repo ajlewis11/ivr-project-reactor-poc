@@ -24,6 +24,7 @@ import java.util.Map;
 
 /**
  * todo javadoc.
+ * I'm a loser
  */
 @Component
 public class StringKafkaReceiver {
