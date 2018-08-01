@@ -1,42 +1,43 @@
 package com.bettercloud.ivr.hack.consume;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.listener.BatchMessageListener;
 import org.springframework.kafka.listener.MessageListener;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
-/**
- * todo javadoc.
- */
-@Component
-public class StringConsumer implements MessageListener<String, String> {
+import java.util.List;
 
+@Component
+public class StringConsumer implements BatchMessageListener<String, String> {
+    private final Logger log = LoggerFactory.getLogger(StringConsumer.class.getCanonicalName());
     private final RestTemplate restTemplate;
-    private final KafkaTemplate kafkaTemplate;
+    private final KafkaTemplate<String, String> kafkaTemplate;
     private static final String OUTBOUND_TOPIC = "ivr-project-reactor-poc-outbound-baseline";
 
     @Autowired
-    public StringConsumer(RestTemplate restTemplate, KafkaTemplate kafkaTemplate) {
+    public StringConsumer(RestTemplate restTemplate, KafkaTemplate<String, String> kafkaTemplate) {
         this.restTemplate = restTemplate;
         this.kafkaTemplate = kafkaTemplate;
     }
 
     @Override
-    public void onMessage(ConsumerRecord<String, String> data) {
-        kafkaTemplate.send(OUTBOUND_TOPIC, reverseString(data.value()));
+    public void onMessage(List<ConsumerRecord<String, String>> records) {
+        log.info("Polled records: {}", records.size());
+        records.parallelStream().forEach(data -> {
+            final String reversed = reverseString(data.value());
+            kafkaTemplate.send(OUTBOUND_TOPIC, reversed)
+                    .addCallback(sendResult -> log.info(reversed), e -> log.error("Error while sending", e));
+        });
     }
 
     private String reverseString(final String stringToReverse) {
-        // todo michael
-        return "placeholder";
-//        final URI uri = UriComponentsBuilder.fromUriString("localhost:8080")
-//                .path("/waffles")
-//                .queryParam("id", stringToReverse)
-//                .build()
-//                .toUri();
-//
-//        return restTemplate.exchange(uri, HttpMethod.GET, null, String.class).getBody();
+        log.info("Making request");
+        return restTemplate.getForObject("http://localhost:8079?value=" + stringToReverse, String.class);
+
     }
 }
